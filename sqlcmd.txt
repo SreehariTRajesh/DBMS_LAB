@@ -1,0 +1,8 @@
+create table Events(id NUM, title STR, location STR);
+create table Locations(name STR, capacity NUM);
+open table Events;
+open table Locations;
+insert into Events values from events.csv;
+insert into Locations values from locations.csv;
+select * from Locations join Events into LocEvent where Locations.name=Events.location;
+

@@ -1,0 +1,7 @@
+# open table Events;
+Relation Events opened successfully
+# open table Locations;
+Relation Locations opened successfully
+# select * from Events join Locations into EventLocations where Events.location == Locations.name;
+Error: Duplicate attributes found
+# 

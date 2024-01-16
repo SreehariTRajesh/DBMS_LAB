@@ -1,0 +1,3 @@
+open table Numbers;
+insert into Numbers values(166200);
+

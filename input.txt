@@ -1,0 +1,5 @@
+create table Numbers(key NUM);
+open table Numbers;
+insert into Numbers values from numbers.csv;
+create index on Numbers.key;
+
