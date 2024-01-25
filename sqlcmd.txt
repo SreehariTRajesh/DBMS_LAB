@@ -4,5 +4,7 @@ open table Events;
 open table Locations;
 insert into Events values from events.csv;
 insert into Locations values from locations.csv;
-select * from Locations join Events into LocEvent where Locations.name=Events.location;
+select name from Locations join Events into LocEvent where Locations.name=Events.location;
+open table LocEvent;
+select * from LocEvent into null;
 

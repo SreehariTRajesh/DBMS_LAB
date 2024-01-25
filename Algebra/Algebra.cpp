@@ -219,7 +219,7 @@ int Algebra::project(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE]) {
                     printf(" %s |", record[i].sVal);
                 } else if(attrCatEntry.attrType == NUMBER) {
                     printf(" %d |", (int) record[i].nVal);
-                }   
+                }
             }
             printf("\n");
             /* code */
@@ -446,7 +446,6 @@ int Algebra::join(char srcRelation1[ATTR_SIZE], char srcRelation2[ATTR_SIZE], ch
 
     int targetAttrIndex = 0;
     for(int i = 0 ; i < numOfAttributes1 ; ++i) {
-    
         AttrCatEntry attrCatEntry;
         AttrCacheTable::getAttrCatEntry(srcRelId1, i, &attrCatEntry);
         strcpy(targetRelAttrNames[targetAttrIndex], attrCatEntry.attrName);

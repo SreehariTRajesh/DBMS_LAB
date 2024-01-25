@@ -8,7 +8,6 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
     AttrCacheTable::getSearchIndex(relId, attrName, &searchIndex);
 
     AttrCatEntry attrCatEntry;
-
     AttrCacheTable::getAttrCatEntry(relId, attrName, &attrCatEntry);
 
     int attrType = attrCatEntry.attrType;
@@ -46,7 +45,7 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
 
         }
     }
-    
+    // Search starts from the root block
 
     while(StaticBuffer::getStaticBlockType(block) == IND_INTERNAL) {
         
@@ -77,7 +76,8 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
             }
             
             if(flag == true) {     
-        
+                // Found an entry which is greater than attrVal;
+                // Set Block Number to left Child of the internal Entry;
                 block = intEntry.lChild;
          
             } else {
@@ -85,7 +85,7 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
                 InternalEntry lastEntry;
                 internalBlk.getEntry((void *)&lastEntry, intHead.numEntries-1);
                 block = lastEntry.rChild;
-        
+                // Set Block Number to the right Child of the internal Entry;
             }
         
         }
@@ -145,7 +145,6 @@ int BPlusTree::bPlusCreate(int relId, char attrName[ATTR_SIZE]) {
     if(relId == RELCAT_RELID || relId == ATTRCAT_RELID) {
         return E_NOTPERMITTED;
     }
-
 
     AttrCatEntry attrCatEntry;
     int ret = AttrCacheTable::getAttrCatEntry(relId, attrName, &attrCatEntry);
@@ -208,7 +207,6 @@ int BPlusTree::bPlusCreate(int relId, char attrName[ATTR_SIZE]) {
     }
 
     return SUCCESS;
-
 }
 
 int BPlusTree::bPlusDestroy(int rootBlockNum) {
@@ -225,7 +223,7 @@ int BPlusTree::bPlusDestroy(int rootBlockNum) {
         rootBlk.releaseBlock();
         return SUCCESS;
 
-    } 
+    }
     else if(type == IND_INTERNAL) {
 
         IndInternal rootBlk(rootBlockNum);
@@ -245,15 +243,16 @@ int BPlusTree::bPlusDestroy(int rootBlockNum) {
         }
 
         rootBlk.releaseBlock();
-    } 
+    
+    }
 
     return E_INVALIDBLOCK;
 
 }
 
 int BPlusTree::bPlusInsert(int relId, char attrName[ATTR_SIZE], Attribute attrVal, RecId recId) {
-    AttrCatEntry attrCatEntry;
     
+    AttrCatEntry attrCatEntry;
     int ret = AttrCacheTable::getAttrCatEntry(relId, attrName, &attrCatEntry);
     
     if(ret != SUCCESS) {
@@ -271,8 +270,10 @@ int BPlusTree::bPlusInsert(int relId, char attrName[ATTR_SIZE], Attribute attrVa
     int leafBlk = BPlusTree::findLeafToInsert(blockNum, attrVal, type);
     
     struct Index entry;
+
     entry.attrVal.nVal = attrVal.nVal;
     strcpy(entry.attrVal.sVal, attrVal.sVal);
+    
     entry.block = recId.block;
     entry.slot = recId.slot;
     
@@ -283,8 +284,8 @@ int BPlusTree::bPlusInsert(int relId, char attrName[ATTR_SIZE], Attribute attrVa
         BPlusTree::bPlusDestroy(blockNum);
         attrCatEntry.rootBlock = -1;
         AttrCacheTable::setAttrCatEntry(relId, attrName, &attrCatEntry);
-
         return E_DISKFULL;
+
     }
 
     return SUCCESS;
@@ -343,7 +344,6 @@ int BPlusTree::insertIntoLeaf(int relId, char attrName[ATTR_SIZE], int blockNum,
 
     IndLeaf leafIndexBlk(blockNum);
 
-
     struct HeadInfo leafBlkHeader;
 
     leafIndexBlk.getHeader(&leafBlkHeader);
@@ -384,11 +384,15 @@ int BPlusTree::insertIntoLeaf(int relId, char attrName[ATTR_SIZE], int blockNum,
     
         leafBlkHeader.numEntries++;
         leafIndexBlk.setHeader(&leafBlkHeader);
+
         for(int i = 0 ; i <  leafBlkHeader.numEntries ; ++i) {
             leafIndexBlk.setEntry((void *) &indices[i], i);
         }
+        
         return SUCCESS;
+    
     }
+
     int newRightBlk = BPlusTree::splitLeaf(blockNum, indices);
 
     if (newRightBlk == E_DISKFULL) {
@@ -400,7 +404,6 @@ int BPlusTree::insertIntoLeaf(int relId, char attrName[ATTR_SIZE], int blockNum,
     if(leafBlkHeader.pblock != -1) {
         
         InternalEntry entry;
-
         entry.attrVal = indices[MIDDLE_INDEX_LEAF].attrVal;
         entry.lChild = blockNum;
         entry.rChild = newRightBlk;
@@ -444,12 +447,10 @@ int BPlusTree::splitLeaf(int leafBlockNum, Index indices[]) {
     rightBlkHeader.pblock = leftBlkHeader.pblock;
     rightBlkHeader.lblock = leftBlkNum;
     rightBlkHeader.rblock = leftBlkHeader.rblock;
-
     rightBlk.setHeader(&rightBlkHeader);
 
     leftBlkHeader.numEntries = (MAX_KEYS_LEAF + 1) / 2;
     leftBlkHeader.rblock = rightBlkNum;
-
     leftBlk.setHeader(&leftBlkHeader);
 
     for(int i = 0; i < 32 ; ++i ){
@@ -470,13 +471,13 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
 
     IndInternal intBlk(intBlockNum);
     
-
     struct HeadInfo blockHeader;
     intBlk.getHeader(&blockHeader);
 
     InternalEntry internalEntries[blockHeader.numEntries + 1];
     
     if(blockHeader.numEntries == 0) {
+
         internalEntries[0] = intEntry;
 
     } else {
@@ -484,6 +485,7 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
         bool firstOccurence = false;
         int j = 0;
         int indexOfEntry = 0;
+
         for(int i = 0 ; i < blockHeader.numEntries ; ++i) {
             
             InternalEntry ithEntry;
@@ -508,7 +510,7 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
             }
         }    
         
-        if(firstOccurence == false){
+        if(firstOccurence == false) {
             internalEntries[blockHeader.numEntries]  = intEntry;
             internalEntries[blockHeader.numEntries].lChild = internalEntries[blockHeader.numEntries-1].rChild;
         }    
@@ -527,7 +529,6 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
     }
     
     int newRightBlk = BPlusTree::splitInternal(intBlockNum, internalEntries);
-
     
     if(newRightBlk == E_DISKFULL) {
         
@@ -537,7 +538,6 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
     }
 
     int ret1 = SUCCESS, ret2 = SUCCESS;
-    
 
     if(blockHeader.pblock != -1) {
     
@@ -556,9 +556,7 @@ int BPlusTree::insertIntoInternal(int relId, char attrName[ATTR_SIZE], int intBl
     }
 
     if(ret1 < 0 || ret2 < 0) {
-        
-        return E_DISKFULL;
-    
+        return E_DISKFULL;    
     }
 
     return SUCCESS;
@@ -622,13 +620,13 @@ int BPlusTree::splitInternal(int intBlockNum, InternalEntry internalEntries []) 
 }
 
 int BPlusTree::createNewRoot(int relId, char attrName[ATTR_SIZE], Attribute attrVal, int lChild, int rChild) {
+    
     AttrCatEntry attrCatEntry;
     AttrCacheTable::getAttrCatEntry(relId, attrName, &attrCatEntry);
     IndInternal newRootBlk;
 
     int newRootBlkNum = newRootBlk.getBlockNum();
 
-    
     if (newRootBlkNum == E_DISKFULL) {
         BPlusTree::bPlusDestroy(rChild);
         return E_DISKFULL;
@@ -643,7 +641,6 @@ int BPlusTree::createNewRoot(int relId, char attrName[ATTR_SIZE], Attribute attr
     InternalEntry firstEntry;
     
     firstEntry.attrVal = attrVal;
-    
     firstEntry.lChild = lChild;
     firstEntry.rChild = rChild;
 
